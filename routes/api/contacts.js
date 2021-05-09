@@ -1,24 +1,106 @@
-const express = require('express')
-const router = express.Router()
+const express = require("express");
+const {
+  getAll,
+  getById,
+  create,
+  remove,
+  update,
+} = require("../../model/contacts");
 
-router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+const router = express.Router();
 
-router.get('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get("/", async (req, res, next) => {
+  try {
+    const contacts = await getAll();
 
-router.post('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      data: { contacts },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.delete('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get("/:id", async (req, res, next) => {
+  try {
+    const contact = await getById(req.params.id);
 
-router.patch('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+    if (contact) {
+      return res.status(200).json({
+        status: "success",
+        code: 200,
+        data: { contact },
+      });
+    }
 
-module.exports = router
+    return res.status(404).json({
+      status: "error",
+      code: 404,
+      message: "Not Found",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/", async (req, res, next) => {
+  try {
+    const contact = await create(req.body);
+
+    return res.status(201).json({
+      status: "success",
+      code: 201,
+      data: { contact },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const contact = await remove(req.params.id);
+
+    if (contact) {
+      return res.status(200).json({
+        status: "success",
+        code: 200,
+        data: { contact },
+      });
+    }
+
+    return res.status(404).json({
+      status: "error",
+      code: 404,
+      message: "Not Found",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/:id", async (req, res, next) => {
+  try {
+    const contact = await update(req.params.id, req.body);
+
+    if (contact) {
+      return res.status(200).json({
+        status: "success",
+        code: 200,
+        data: { contact },
+      });
+    }
+
+    return res.status(404).json({
+      status: "error",
+      code: 404,
+      message: "Not Found",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;
