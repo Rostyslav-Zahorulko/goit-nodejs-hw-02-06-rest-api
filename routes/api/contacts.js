@@ -6,6 +6,10 @@ const {
   remove,
   update,
 } = require("../../model/contacts");
+const {
+  validateContactCreation,
+  validateContactUpdation,
+} = require("./validation");
 
 const router = express.Router();
 
@@ -45,7 +49,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", validateContactCreation, async (req, res, next) => {
   try {
     const contact = await create(req.body);
 
@@ -81,7 +85,7 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", validateContactUpdation, async (req, res, next) => {
   try {
     const contact = await update(req.params.id, req.body);
 
