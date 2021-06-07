@@ -2,7 +2,9 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const usersModel = require("../model/users-model");
 const { httpCode } = require("../helpers/constants");
-const jwtSecretKey = process.env.JWT_SECRET_KEY;
+const AvatarLocalUpload = require("../services/avatars-local-upload");
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const USERS_AVATARS = process.env.USERS_AVATARS;
 
 const signup = async (req, res, next) => {
   try {
@@ -17,12 +19,12 @@ const signup = async (req, res, next) => {
     }
 
     const newUser = await usersModel.create(req.body);
-    const { id, password, email, subscription } = newUser;
+    const { id, password, email, subscription, avatar } = newUser;
 
     return res.status(httpCode.CREATED).json({
       status: "success",
       code: httpCode.CREATED,
-      data: { id, password, email, subscription },
+      data: { id, password, email, subscription, avatar },
     });
   } catch (error) {
     next(error);
@@ -43,7 +45,7 @@ const login = async (req, res, next) => {
     }
 
     const payload = { id: user.id };
-    const token = jwt.sign(payload, jwtSecretKey, { expiresIn: "2h" });
+    const token = jwt.sign(payload, JWT_SECRET_KEY, { expiresIn: "2h" });
     await usersModel.updateToken(user.id, token);
 
     return res.status(httpCode.OK).json({
@@ -58,11 +60,13 @@ const login = async (req, res, next) => {
   }
 };
 
+const logout = async (req, res, next) => {
+  await usersModel.updateToken(req.user.id, null);
+  return res.status(httpCode.NO_CONTENT).json({});
+};
+
 const update = async (req, res, next) => {
   try {
-    console.log(req.user.id);
-    console.log(req.body);
-
     const user = await usersModel.updateSubscription(req.user.id, req.body);
 
     if (user) {
@@ -88,14 +92,32 @@ const update = async (req, res, next) => {
   }
 };
 
-const logout = async (req, res, next) => {
-  await usersModel.updateToken(req.user.id, null);
-  return res.status(httpCode.NO_CONTENT).json({});
+const avatars = async (req, res, next) => {
+  try {
+    const upload = new AvatarLocalUpload(USERS_AVATARS);
+    const avatarUrl = await upload.saveAvatarToStatic({
+      userId: req.user.id,
+      filePath: req.file.path,
+      fileName: req.file.filename,
+      oldFile: req.user.avatar,
+    });
+
+    await usersModel.updateAvatar(req.user.id, avatarUrl);
+
+    return res.status(httpCode.OK).json({
+      status: "success",
+      code: httpCode.OK,
+      data: { avatarUrl },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
   signup,
   login,
-  update,
   logout,
+  update,
+  avatars,
 };

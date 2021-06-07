@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const helmet = require("helmet");
 const logger = require("morgan");
 const cors = require("cors");
@@ -12,6 +13,7 @@ const app = express();
 const loggerFormats = app.get("env") === "development" ? "dev" : "short";
 
 app.use(helmet());
+app.use(express.static(path.join(__dirname, "public")));
 app.use(limiter);
 app.use(logger(loggerFormats));
 app.use(cors());
