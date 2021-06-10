@@ -22,9 +22,7 @@ const create = async (options) => {
 };
 
 const updateToken = async (id, token) => {
-  const user = await User.updateOne({ _id: id }, { token });
-
-  return user;
+  return await User.updateOne({ _id: id }, { token });
 };
 
 const updateSubscription = async (id, body) => {
@@ -37,10 +35,15 @@ const updateSubscription = async (id, body) => {
   return user;
 };
 
+const updateAvatar = async (id, avatar) => {
+  return await User.updateOne({ _id: id }, { avatar });
+};
+
 module.exports = {
   getById,
   getByEmail,
   create,
   updateToken,
   updateSubscription,
+  updateAvatar,
 };

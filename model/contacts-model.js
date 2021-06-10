@@ -24,7 +24,7 @@ const getById = async (userId, contactId) => {
   const contact = await Contact.findOne({
     _id: contactId,
     owner: userId,
-  }).populate({ path: "owner", select: "email subscription -_id" });
+  }).populate({ path: "owner", select: "email subscription" });
 
   return contact;
 };
