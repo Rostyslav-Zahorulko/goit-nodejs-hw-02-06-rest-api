@@ -3,6 +3,8 @@ require("dotenv").config();
 const usersModel = require("../model/users-model");
 const { httpCode } = require("../helpers/constants");
 const AvatarLocalUpload = require("../services/avatars-local-upload");
+const EmailService = require("../services/email");
+const { SendgridSender } = require("../services/email-sender");
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 const USERS_AVATARS = process.env.USERS_AVATARS;
 
@@ -19,7 +21,19 @@ const signup = async (req, res, next) => {
     }
 
     const newUser = await usersModel.create(req.body);
-    const { id, password, email, subscription, avatar } = newUser;
+    const { id, password, email, subscription, avatar, verificationToken } =
+      newUser;
+
+    try {
+      const emailService = new EmailService(
+        process.env.NODE_ENV,
+        new SendgridSender()
+      );
+
+      await emailService.sendVerificationEmail(verificationToken, email);
+    } catch (error) {
+      console.log(error.message);
+    }
 
     return res.status(httpCode.CREATED).json({
       status: "success",
@@ -41,6 +55,14 @@ const login = async (req, res, next) => {
         status: "error",
         code: httpCode.UNAUTHORIZED,
         message: "Invalid credentials",
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.status(httpCode.UNAUTHORIZED).json({
+        status: "error",
+        code: httpCode.UNAUTHORIZED,
+        message: "Verify your email",
       });
     }
 
@@ -114,10 +136,77 @@ const avatars = async (req, res, next) => {
   }
 };
 
+const verify = async (req, res, next) => {
+  try {
+    const user = await usersModel.getByVerificationToken(req.params.token);
+
+    if (user) {
+      await usersModel.updateVerification(user.id, true, null);
+
+      return res.status(httpCode.OK).json({
+        status: "success",
+        code: httpCode.OK,
+        message: "Verification is successful",
+      });
+    }
+
+    return res.status(httpCode.NOT_FOUND).json({
+      status: "error",
+      code: httpCode.NOT_FOUND,
+      message: "User is not found",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resendVerificationEmail = async (req, res, next) => {
+  const user = await usersModel.getByEmail(req.body.email);
+
+  if (user) {
+    const { email, verificationToken, isVerified } = user;
+
+    if (!isVerified) {
+      try {
+        const emailService = new EmailService(
+          process.env.NODE_ENV,
+          new SendgridSender()
+        );
+
+        await emailService.sendVerificationEmail(verificationToken, email);
+
+        return res.status(httpCode.OK).json({
+          status: "success",
+          code: httpCode.OK,
+          message: "Verification email is resend",
+        });
+      } catch (error) {
+        console.log(error.message);
+
+        return next(error);
+      }
+    }
+
+    return res.status(httpCode.CONFLICT).json({
+      status: "error",
+      code: httpCode.CONFLICT,
+      message: "Your email is already verified",
+    });
+  }
+
+  return res.status(httpCode.NOT_FOUND).json({
+    status: "error",
+    code: httpCode.NOT_FOUND,
+    message: "User is not found",
+  });
+};
+
 module.exports = {
   signup,
   login,
   logout,
   update,
   avatars,
+  verify,
+  resendVerificationEmail,
 };

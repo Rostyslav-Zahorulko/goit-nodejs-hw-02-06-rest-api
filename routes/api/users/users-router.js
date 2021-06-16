@@ -25,4 +25,8 @@ usersRouter.patch(
   usersController.avatars
 );
 
+usersRouter.get("/verify/:token", usersController.verify);
+
+usersRouter.post("/verify", usersController.resendVerificationEmail);
+
 module.exports = usersRouter;

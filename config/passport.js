@@ -5,11 +5,11 @@ const { Strategy, ExtractJwt } = require("passport-jwt");
 const usersModel = require("../model/users-model");
 
 require("dotenv").config();
-const jwtSecretKey = process.env.JWT_SECRET_KEY;
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: jwtSecretKey,
+  secretOrKey: JWT_SECRET_KEY,
 };
 
 passport.use(
@@ -18,10 +18,14 @@ passport.use(
       const user = await usersModel.getById(payload.id);
 
       if (!user) {
-        return done(new Error("User not found"), false);
+        return done(new Error("User is not found"), false);
       }
 
       if (!user.token) {
+        return done(null, false);
+      }
+
+      if (!user.isVerified) {
         return done(null, false);
       }
 
