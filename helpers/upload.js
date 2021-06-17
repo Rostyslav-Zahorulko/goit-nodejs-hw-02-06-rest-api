@@ -17,7 +17,10 @@ const upload = multer({
   limits: { fileSize: 2000000 },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.includes("image")) {
-      cb(null, false);
+      const error = new Error("Only image can be download as an avatar");
+      error.status = "error";
+      error.code = 400;
+      cb(error);
       return;
     }
 

@@ -33,9 +33,9 @@ const getContactById = async (req, res, next) => {
       });
     }
 
-    return res.status(httpCode.BAD_REQUEST).json({
+    return res.status(httpCode.NOT_FOUND).json({
       status: "error",
-      code: httpCode.BAD_REQUEST,
+      code: httpCode.NOT_FOUND,
       message: "Not Found",
     });
   } catch (error) {
